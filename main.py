@@ -79,9 +79,12 @@ class Encoder(Layer):
         self.self_attention = SelfAttention(self.embedSize)
         self.cross_attention = CrossAttention(self.embedSize)
         self.mha = MultiHeadAttention(4, 100)
+        self.pEmbedding=PositionEmbedding(vocabSize,embedSize)
+
 
     def call(self, tokens):
         embedding = self.embedding(tokens)
+        embedding=embedding+self.pEmbedding(embedding)
         logits = self.mha(embedding)
         logits = self.self_attention(logits)
         logits = self.cross_attention(logits, logits)
@@ -101,9 +104,12 @@ class Decoder(Layer):
         self.mha = MultiHeadAttention(4, 100)
         self.maskMatrix = tf.ones((self.embedSize, self.embedSize))
         self.maskMatrix = tf.linalg.band_part(self.maskMatrix, -1, 0)
+        self.pEmbedding=PositionEmbedding(vocabSize,embedSize)
+
 
     def call(self, tokens):
         embedding = self.embedding(tokens)
+        embedding=embedding+self.pEmbedding(embedding)
         logits = self.mha(embedding)
         logits = self.self_attention(logits)
         logits = tf.matmul(logits, self.maskMatrix)
